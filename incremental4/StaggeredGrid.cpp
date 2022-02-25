@@ -421,4 +421,7 @@ void StaggeredGrid::ApplyGravity(double dt) {
       }
     }
   }
+
+  // Make sure we fix the boundary velocities that we just changed!
+  SetBoundaryVelocities();
 }

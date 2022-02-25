@@ -680,6 +680,14 @@ void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
     for (std::size_t j = 0; j < ny + 1; j++) {
       for (std::size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 3 || j == 4) && (k == 2 || k == 3))) {
+          // Fixing the boundary velocities should reset these to zero.
+          if (j <= 1 || j >= ny - 1) {
+            assert(FuzzyEquals(grid.v()(i, j, k), 0.0));
+            continue;
+          }
+
+          // These velocities should remain subject to the application of
+          // gravitational acceleration.
           assert(FuzzyEquals(grid.v()(i, j, k), 0.0 - dt_times_g));
         }
       }
