@@ -15,6 +15,7 @@ namespace {
 typedef Eigen::Matrix<std::size_t, 3, 1> GridIndices;
 
 const double kFloatZero = 1.0e-6;
+const double kClampCushion = 1.0e-4;
 
 Eigen::Vector3d HalfShiftYZ(double dx) {
   Eigen::Vector3d half_shift;
@@ -173,6 +174,7 @@ StaggeredGrid::StaggeredGrid(std::size_t nx, std::size_t ny, std::size_t nz,
       nz_(nz),
       ny_nz_(ny * nz),
       lc_(lc),
+      uc_(lc + Eigen::Vector3d(nx, ny, nz) * dx),
       dx_(dx),
       half_shift_yz_(HalfShiftYZ(dx)),
       half_shift_xz_(HalfShiftXZ(dx)),
@@ -191,11 +193,31 @@ StaggeredGrid::~StaggeredGrid() {}
 Eigen::Vector3d StaggeredGrid::Advect(const Eigen::Vector3d& pos,
                                       double dt) const {
   Eigen::Vector3d p_lc(pos - lc_);
-  return pos +
-         dt * Eigen::Vector3d(
-                  InterpolateGridVelocities(p_lc - half_shift_yz_, u_, dx_),
-                  InterpolateGridVelocities(p_lc - half_shift_xz_, v_, dx_),
-                  InterpolateGridVelocities(p_lc - half_shift_xy_, w_, dx_));
+  double u_p = InterpolateGridVelocities(p_lc - half_shift_yz_, u_, dx_);
+  double v_p = InterpolateGridVelocities(p_lc - half_shift_xz_, v_, dx_);
+  double w_p = InterpolateGridVelocities(p_lc - half_shift_xy_, w_, dx_);
+  return ClampToNonSolidCells(pos + dt * Eigen::Vector3d(u_p, v_p, w_p));
+}
+
+inline Eigen::Vector3d StaggeredGrid::ClampToNonSolidCells(
+    const Eigen::Vector3d& pos) const {
+  Eigen::Vector3d clamped_pos = pos;
+  const double cell_plus_cushion = dx_ + kClampCushion;
+
+  for (std::size_t i = 0; i < 3; i++) {
+    double min = lc_[i] + cell_plus_cushion;
+    if (pos[i] <= min) {
+      clamped_pos[i] = min;
+      continue;
+    }
+
+    double max = uc_[i] - cell_plus_cushion;
+    if (pos[i] >= max) {
+      clamped_pos[i] = max;
+    }
+  }
+
+  return clamped_pos;
 }
 
 void StaggeredGrid::ParticlesToGrid(const std::vector<Particle>& particles) {

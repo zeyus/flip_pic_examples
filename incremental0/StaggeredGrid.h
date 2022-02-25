@@ -5,6 +5,9 @@
 
 #include "Array3D.h"
 
+// A data type representing a grid with velocity components defined at grid cell
+// boundaries and cell-specific values, including pressure, defined at grid cell
+// centers
 class StaggeredGrid {
  public:
   // Allocates a 3D staggered grid storing the following quantities as

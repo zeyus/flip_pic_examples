@@ -8,6 +8,9 @@
 #include "Array3D.h"
 #include "Particle.h"
 
+// A data type representing a grid with velocity components defined at grid cell
+// boundaries and cell-specific values, including pressure, defined at grid cell
+// centers
 class StaggeredGrid {
  public:
   // Used to label cells
@@ -33,7 +36,7 @@ class StaggeredGrid {
   const Array3D<double>& w() const { return w_; }
   const Array3D<MaterialType>& cell_labels() const { return cell_labels_; }
 
-  // Transfer particle velocities to this grid.
+  // Transfers particle velocities to this grid.
   void ParticlesToGrid(const std::vector<Particle>& particles);
 
  private:

@@ -8,6 +8,9 @@
 #include "Array3D.h"
 #include "Particle.h"
 
+// A data type representing a grid with velocity components defined at grid cell
+// boundaries and cell-specific values, including pressure, defined at grid cell
+// centers
 class StaggeredGrid {
  public:
   // Used to label cells
@@ -33,10 +36,10 @@ class StaggeredGrid {
   const Array3D<double>& w() const { return w_; }
   const Array3D<MaterialType>& cell_labels() const { return cell_labels_; }
 
-  // Advect velocity for a particle located at |pos|.
+  // Advects velocity for a particle located at |pos|.
   Eigen::Vector3d Advect(const Eigen::Vector3d& pos, double dt) const;
 
-  // Transfer particle velocities to this grid.
+  // Transfers particle velocities to this grid.
   void ParticlesToGrid(const std::vector<Particle>& particles);
 
  private:
@@ -45,6 +48,10 @@ class StaggeredGrid {
 
   // Don't allow copy-assignment operator to be called.
   StaggeredGrid& operator=(const StaggeredGrid& other);
+
+  // Returns the result of clamping |pos| to stay within the non-SOLID cells
+  // with a small floating-point buffer.
+  inline Eigen::Vector3d ClampToNonSolidCells(const Eigen::Vector3d& pos) const;
 
   void ZeroOutVelocities();
 
@@ -77,6 +84,9 @@ class StaggeredGrid {
 
   // Lower corner position (min x, y, z) of the grid
   const Eigen::Vector3d lc_;
+
+  // Upper corner position (max x, y, z) of the grid
+  const Eigen::Vector3d uc_;
 
   // Grid cell width (side length)
   const double dx_;
