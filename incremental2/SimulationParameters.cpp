@@ -32,7 +32,9 @@ SimulationParameters::SimulationParameters(const SimulationParameters& other)
       lc_(other.lc_),
       flip_ratio_(other.flip_ratio_),
       input_file_(other.input_file_),
-      output_file_name_pattern_(other.output_file_name_pattern_) {}
+      output_file_name_pattern_(other.output_file_name_pattern_) {
+  assert(false);
+}
 
 SimulationParameters SimulationParameters::CreateFromJsonFile(
     const std::string& input_file_path) {

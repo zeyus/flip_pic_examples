@@ -16,7 +16,41 @@ class SimulationParameters {
                        const std::string& output_file_name_pattern);
 
   // Copy constructor
-  // Creates a set of simulation configuration settings from another instance.
+  // The C++ compiler should NOT invoke this copy constructor when doing this:
+  //
+  // SimulationParameters MakeUnnamedSimParams() {
+  //   return SimulationParameters(...);
+  // }
+  //
+  // int main(...) {
+  //   SimulationParameters s = MakeUnnamedSimParams();
+  // }
+  //
+  // The C++ compiler should apply unnamed return value optimization to
+  // eliminate the unnecessary copying of the unnamed object returned from
+  // MakeSimParams() into s, and instead simply create s with the unnamed
+  // returned object as its value. Similarly, when we return a named object:
+  //
+  // SimulationParameters MakeNamedSimParams() {
+  //   SimulationParameters s(...);
+  //   return s;
+  // }
+  //
+  // int main(...) {
+  //   SimulationParameters s = MakeNamedSimParams();
+  // }
+  //
+  // The C++ compiler should apply named return value optimization to eliminate
+  // the unnecessary copying of the returned object into s. Starting in C++17,
+  // it is unnecessary to declare this copy constructor when return value
+  // optimization is applied. However, prior to C++17, the C++ compiler still
+  // requires this copy constructor to be declared when it *appears* to be
+  // invoked as the compiler pretends return value optimization will not be
+  // applied, and then the compiler applies it anyway. Due to subtleties in how
+  // each compiler applies or refuses to apply return value optimization, we
+  // explicitly implement this copy constructor to instantiate a complete
+  // SimulationParameters instance and then promptly cause an assertion failure.
+  // So, if this copy constructor is ever invoked, it will crash the program.
   SimulationParameters(const SimulationParameters& other);
 
   // Returns a new set of configuration settings for a simulation read from a
