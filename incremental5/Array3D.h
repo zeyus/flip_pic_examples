@@ -12,15 +12,6 @@ class Array3D {
   // Allocates a 3D array with |nx| rows, |ny| columns, and depth |nz|.
   inline Array3D(std::size_t nx, std::size_t ny, std::size_t nz);
 
-  // Copy constructor
-  // This should never be called during run-time. However, it is required during
-  // compile time for earlier C++ versions if any functions return an object of
-  // type Array3D. We will ensure this never gets called during run-time by
-  // incluing an assertion failure in this function's implementation. When a
-  // function returns an Array3D object, the copying of the returned value to a
-  // receiving variable should be eliminated via return value optimization.
-  inline Array3D(const Array3D& other);
-
   // Sets |*this| = |other|.
   // We use this function instead of operator= to prevent any automatic calls to
   // operator= that may occur e.g. when returning an Array3D from a function and
@@ -59,6 +50,9 @@ class Array3D {
                               const Array3D<T>& arr2);
 
  private:
+  // Don't allow copy constructor to be called from outside this class.
+  Array3D(const Array3D& other);
+
   // Don't allow copy-assignment operator to be called from outside this class.
   Array3D& operator=(const Array3D& other);
 
@@ -81,12 +75,6 @@ class Array3D {
 template <class T>
 inline Array3D<T>::Array3D(std::size_t nx, std::size_t ny, std::size_t nz)
     : nx_(nx), ny_(ny), nz_(nz), ny_nz_(ny * nz), data_(new T[nx * ny_nz_]) {}
-
-template <class T>
-inline Array3D<T>::Array3D(const Array3D<T>& other)
-    : nx_(nx), ny_(ny), nz_(nz), ny_nz_(ny * nz), data_(new T[nx * ny_nz_]) {
-  assert(false);
-}
 
 template <class T>
 inline void Array3D<T>::SetEqualTo(const Array3D<T>& other) {
