@@ -866,6 +866,285 @@ void TestPressureProjection(int argc, char** argv) {
   assert(IsZero(&grid.p()));
 }
 
+std::vector<Particle> GridToParticle(int argc, char** argv, double flip_ratio) {
+  SimulationParameters params = ReadSimulationParameters(argc, argv);
+
+  std::size_t nx = 9, ny = 7, nz = 5;
+  Eigen::Vector3d lower_corner(0.0, 0.0, 0.0);
+  double dx = 1.0;
+  StaggeredGrid grid(nx, ny, nz, lower_corner, dx);
+
+  std::vector<Particle> particles;
+
+  particles.push_back(MakeParticle(2.75, 3.25, 2.5, 10.0, 20.0, 30.0));
+  particles.push_back(MakeParticle(3.125, 3.125, 2.5, 30.0, 10.0, 20.0));
+
+  // Splat two particles' velocities onto the grid
+  grid.ParticlesToGrid(particles);
+
+  // Skip advection so we can use the same grid velocities from earlier tests
+  // above, preserving the original un-advected particle positions!
+  // for (std::vector<Particle>::iterator p = particles.begin();
+  //      p != particles.end(); p++) {
+  //   p->pos = grid.Advect(p->pos, params.dt_seconds());
+  // }
+
+  // Apply gravitational acceleration
+  grid.ApplyGravity(params.dt_seconds());
+
+  for (std::vector<Particle>::iterator p = particles.begin();
+       p != particles.end(); p++) {
+    p->vel = grid.GridToParticle(flip_ratio, *p);
+  }
+
+  return particles;
+}
+
+void TestGridToParticlePurePic(int argc, char** argv) {
+  std::vector<Particle> particles = GridToParticle(argc, argv, 0.0);
+
+  // First particle is at (2.75, 3.25, 2.5).
+  // - 1/2 shift by y and z -> (2.75, 2.75, 2)
+  //   . Indices (2, 2, 2)
+  //   . Weights (0.75, 0.75, 0)
+  //   . New grid velocities around particle after gravity applied:
+  //     - u(2, 2, 2) = 10
+  //     - u(2, 3, 2) = 10
+  //     - u(3, 2, 2) = 22.72727272727272727272727272727272727272727272727
+  //     - u(3, 3, 2) = 19.85915492957746478873239436619718309859154929577
+  //   . Trilinear interpolation is
+  //     (1 - 0.75) * (1 - 0.75) * (1 - 0) * u(2, 2, 2) +
+  //     (1 - 0.75) * (1 - 0.75) * 0 * u(2, 2, 3) +
+  //     (1 - 0.75) * 0.75 * (1 - 0) * u(2, 3, 2) +
+  //     (1 - 0.75) * 0.75 * 0 * u(2, 3, 3) +
+  //     0.75 * (1 - 0.75) * (1 - 0) * u(3, 2, 2) +
+  //     0.75 * (1 - 0.75) * 0 * u(3, 2, 3) +
+  //     0.75 * 0.75 * (1 - 0) * u(3, 3, 2) +
+  //     0.75 * 0.75 * 0 * u(3, 3, 3)
+  //     = 1/16 * u(2, 2, 2) + 3/16 * u(2, 3, 2) + 3/16 * u(3, 2, 2) +
+  //       9/16 * u(3, 3, 2)
+  //     = 40/16 + 3/16 * 22.72727272727272727272727272727272727272727272727 +
+  //       9/16 * 19.85915492957746478873239436619718309859154929577
+  //     = 17.93213828425096030729833546734955185659411011523
+  assert(FuzzyEquals(particles[0].vel[0],
+                     17.93213828425096030729833546734955185659411011523));
+  // - 1/2 shift by x and z -> (2.25, 3.25, 2)
+  //   . Indices (2, 3, 2)
+  //   . Weights (0.25, 0.25, 0)
+  //   . New grid velocities around particle after gravity applied:
+  //     - dt_times_g = 0.001111112 * 9.80665;
+  //     - v(2, 3, 2) = 16.31578947368421052631578947368421052631578947368 -
+  //                    dt_times_g
+  //                  = 16.30489318718941052631578947368421052631578947368
+  //     - v(2, 4, 2) = 18.0 - dt_times_g
+  //                  = 17.9891037135052
+  //     - v(3, 3, 2) = 12.55319148936170212765957446808510638297872340426 -
+  //                    dt_times_g
+  //                  = 12.54229520286690212765957446808510638297872340426
+  //     - v(3, 4, 2) = 14.44444444444444444444444444444444444444444444444 -
+  //                    dt_times_g
+  //                  = 14.43354815794964444444444444444444444444444444444
+  //   . Trilinear interpolation is
+  //     (1 - 0.25) * (1 - 0.25) * (1 - 0) * v(2, 3, 2) +
+  //     (1 - 0.25) * (1 - 0.25) * 0 * v(2, 3, 3) +
+  //     (1 - 0.25) * 0.25 * (1 - 0) * v(2, 4, 2) +
+  //     (1 - 0.25) * 0.25 * 0 * v(2, 4, 3) +
+  //     0.25 * (1 - 0.25) * (1 - 0) * v(3, 3, 2) +
+  //     0.25 * (1 - 0.25) * 0 * v(3, 3, 3) +
+  //     0.25 * 0.25 * (1 - 0) * v(3, 4, 2) +
+  //     0.25 * 0.25 * 0 * v(3, 4, 3)
+  //     = 9/16 * v(2, 3, 2) + 3/16 * v(2, 4, 2) + 3/16 * v(3, 3, 2) +
+  //       1/16 * v(3, 4, 2)
+  //     = 15.79823647448566534776657956949110364563891999502
+  assert(FuzzyEquals(particles[0].vel[1],
+                     15.79823647448566534776657956949110364563891999502));
+  // - 1/2 shift by x and y -> (2.25, 2.75, 2.5)
+  //   . Indices (2, 2, 2)
+  //   . Weights (0.25, 0.75, 0.5)
+  //   . New grid velocities around particle after gravity applied:
+  //     - w(2, 2, 2) = 25.71428571428571428571428571428571428571428571429
+  //     - w(2, 2, 3) = 25.71428571428571428571428571428571428571428571429
+  //     - w(2, 3, 2) = 27.05882352941176470588235294117647058823529411765
+  //     - w(2, 3, 3) = 27.05882352941176470588235294117647058823529411765
+  //     - w(3, 2, 2) = 22.10526315789473684210526315789473684210526315789
+  //     - w(3, 2, 3) = 22.10526315789473684210526315789473684210526315789
+  //     - w(3, 3, 2) = 23.24324324324324324324324324324324324324324324324
+  //     - w(3, 3, 3) = 23.24324324324324324324324324324324324324324324324
+  //   . Trilinear interpolation is
+  //     (1 - 0.25) * (1 - 0.75) * (1 - 0.5) * w(2, 2, 2) +
+  //     (1 - 0.25) * (1 - 0.75) * 0.5 * w(2, 2, 3) +
+  //     (1 - 0.25) * 0.75 * (1 - 0.5) * w(2, 3, 2) +
+  //     (1 - 0.25) * 0.75 * 0.5 * w(2, 3, 3) +
+  //     0.25 * (1 - 0.75) * (1 - 0.5) * w(3, 2, 2) +
+  //     0.25 * (1 - 0.75) * 0.5 * w(3, 2, 3) +
+  //     0.25 * 0.75 * (1 - 0.5) * w(3, 3, 2) +
+  //     0.25 * 0.75 * 0.5 * w(3, 3, 3)
+  //     = 3/32 * [w(2, 2, 2) + w(2, 2, 3)] + (all pairs here are equal!)
+  //       9/32 * [w(2, 3, 2) + w(2, 3, 3)] +
+  //       1/32 * [w(3, 2, 2) + w(3, 3, 2)] +
+  //       3/32 * [w(3, 3, 2) + w(3, 3, 3)]
+  //     = 3/16 * 25.71428571428571428571428571428571428571428571429 +
+  //       9/16 * 27.05882352941176470588235294117647058823529411765 +
+  //       1/16 * 22.10526315789473684210526315789473684210526315789 +
+  //       3/16 * 23.24324324324324324324324324324324324324324324324
+  //     = 25.78170386219921823636993915631686529519346856808
+  assert(FuzzyEquals(particles[0].vel[2],
+                     25.78170386219921823636993915631686529519346856808));
+  // Second particle is at (3.125, 3.125, 2.5).
+  // - 1/2 shift by y and z -> (3.125, 2.625, 2)
+  //   . Indices (3, 2, 2)
+  //   . Weights (0.125, 0.625, 0) = (1/8, 5/8, 0)
+  //   . New grid velocities around particle after gravity applied:
+  //     - u(3, 2, 2) = 22.72727272727272727272727272727272727272727272727
+  //     - u(3, 3, 2) = 19.85915492957746478873239436619718309859154929577
+  //     - u(4, 2, 2) = 30
+  //     - u(4, 3, 2) = 30
+  //   . Trilinear interpolation is
+  //     (1 - 1/8) * (1 - 5/8) * (1 - 0) * u(3, 2, 2) +
+  //     (1 - 1/8) * (1 - 5/8) * 0 * u(3, 2, 3) +
+  //     (1 - 1/8) * 5/8 * (1 - 0) * u(3, 3, 2) +
+  //     (1 - 1/8) * 5/8 * 0 * u(3, 3, 3) +
+  //     1/8 * (1 - 5/8) * (1 - 0) * u(4, 2, 2) +
+  //     1/8 * (1 - 5/8) * 0 * u(4, 2, 3) +
+  //     1/8 * 5/8 * (1 - 0) * u(4, 3, 2) +
+  //     1/8 * 5/8 * 0 * u(4, 3, 3)
+  //     = 21/64 * u(3, 2, 2) + 35/64 * u(3, 3, 2) + 3/64 * u(4, 2, 2) +
+  //       5/64 * u(4, 3, 2)
+  //     = 21/64 * 22.72727272727272727272727272727272727272727272727 +
+  //       35/64 * 19.85915492957746478873239436619718309859154929577 + 240/64
+  //     = 22.06786171574903969270166453265044814340588988476
+  assert(FuzzyEquals(particles[1].vel[0],
+                     22.06786171574903969270166453265044814340588988476));
+  // - 1/2 shift by x and z -> (2.625, 3.125, 2)
+  //   . Indices (2, 3, 2)
+  //   . Weights (0.625, 0.125, 0) = (5/8, 1/8, 0)
+  //   . New grid velocities around particle after gravity applied:
+  //     - dt_times_g = 0.001111112 * 9.80665;
+  //     - v(2, 3, 2) = 16.31578947368421052631578947368421052631578947368 -
+  //                    dt_times_g
+  //                  = 16.30489318718941052631578947368421052631578947368
+  //     - v(2, 4, 2) = 18.0 - dt_times_g
+  //                  = 17.9891037135052
+  //     - v(3, 3, 2) = 12.55319148936170212765957446808510638297872340426 -
+  //                    dt_times_g
+  //                  = 12.54229520286690212765957446808510638297872340426
+  //     - v(3, 4, 2) = 14.44444444444444444444444444444444444444444444444 -
+  //                    dt_times_g
+  //                  = 14.43354815794964444444444444444444444444444444444
+  //   . Trilinear interpolation is
+  //     (1 - 5/8) * (1 - 1/8) * (1 - 0) * v(2, 3, 2) +
+  //     (1 - 5/8) * (1 - 1/8) * 0 * v(2, 3, 3) +
+  //     (1 - 5/8) * 1/8 * (1 - 0) * v(2, 4, 2) +
+  //     (1 - 5/8) * 1/8 * 0 * v(2, 4, 3) +
+  //     5/8 * (1 - 1/8) * (1 - 0) * v(3, 3, 2) +
+  //     5/8 * (1 - 1/8) * 0 * v(3, 3, 3) +
+  //     5/8 * 1/8 * (1 - 0) * v(3, 4, 2) +
+  //     5/8 * 1/8 * 0 * v(3, 4, 3)
+  //     = 21/64 * v(2, 3, 2) + 3/64 * v(2, 4, 2) + 35/64 * v(3, 3, 2) +
+  //       5/64 * v(3, 4, 2)
+  //     = 21/64 * 16.30489318718941052631578947368421052631578947368 +
+  //       3/64 * 17.9891037135052 +
+  //       35/64 * 12.54229520286690212765957446808510638297872340426 +
+  //       5/64 * 14.43354815794964444444444444444444444444444444444
+  //     = 14.17997095252473465223342043050889635436108000498
+  assert(FuzzyEquals(particles[1].vel[1],
+                     14.17997095252473465223342043050889635436108000498));
+  // - 1/2 shift by x and y -> (2.625, 2.625, 2.5)
+  //   . Indices (2, 2, 2)
+  //   . Weights (0.625, 0.625, 0.5) = (5/8, 5/8, 1/2)
+  //   . New grid velocities around particle after gravity applied:
+  //     - w(2, 2, 2) = 25.71428571428571428571428571428571428571428571429
+  //     - w(2, 2, 3) = 25.71428571428571428571428571428571428571428571429
+  //     - w(2, 3, 2) = 27.05882352941176470588235294117647058823529411765
+  //     - w(2, 3, 3) = 27.05882352941176470588235294117647058823529411765
+  //     - w(3, 2, 2) = 22.10526315789473684210526315789473684210526315789
+  //     - w(3, 2, 3) = 22.10526315789473684210526315789473684210526315789
+  //     - w(3, 3, 2) = 23.24324324324324324324324324324324324324324324324
+  //     - w(3, 3, 3) = 23.24324324324324324324324324324324324324324324324
+  //   . Trilinear interpolation is
+  //     (1 - 5/8) * (1 - 5/8) * (1 - 1/2) * w(2, 2, 2) +
+  //     (1 - 5/8) * (1 - 5/8) * 1/2 * w(2, 2, 3) +
+  //     (1 - 5/8) * 5/8 * (1 - 1/2) * w(2, 3, 2) +
+  //     (1 - 5/8) * 5/8 * 1/2 * w(2, 3, 3) +
+  //     5/8 * (1 - 5/8) * (1 - 1/2) * w(3, 2, 2) +
+  //     5/8 * (1 - 5/8) * 1/2 * w(3, 2, 3) +
+  //     5/8 * 5/8 * (1 - 1/2) * w(3, 3, 2) +
+  //     5/8 * 5/8 * 1/2 * w(3, 3, 3)
+  //     = 9/128 * w(2, 2, 2) + 9/128 * w(2, 2, 3) + (pairs are the same again)
+  //       15/128 * w(2, 3, 2) + 15/128 * w(2, 3, 3) +
+  //       15/128 * w(3, 2, 2) + 15/128 * w(3, 2, 3) +
+  //       25/128 * w(3, 3, 2) + 25/128 * w(3, 3, 3)
+  //     = 9/64 * 25.71428571428571428571428571428571428571428571429 +
+  //       15/64 * 27.05882352941176470588235294117647058823529411765 +
+  //       15/64 * 22.10526315789473684210526315789473684210526315789 +
+  //       25/64 * 23.24324324324324324324324324324324324324324324324
+  //     = 24.21829613780078176363006084368313470480653143192
+  assert(FuzzyEquals(particles[1].vel[2],
+                     24.21829613780078176363006084368313470480653143192));
+}
+
+void TestGridToParticlePureFlip(int argc, char** argv) {
+  std::vector<Particle> particles = GridToParticle(argc, argv, 1.0);
+
+  // The only velocities that would have changed between the end of the
+  // ParticlesToGrid function and the GridToParticle calls would have been the
+  // application of gravity, since we skipped advection. So, 1.0 * (particle
+  // velocity minus old interpolated velocity) + new interpolated velocity is
+  // just particle velocity + new_velocity - old_velocity = particle velocity +
+  // (0, new - old vertical velocity, 0). But note new_velocity's vertical
+  // component is just the old velocity's vertical component minus dt*g, so
+  // (0, new - old vertical velocity, 0) = (0, (old_vel - dt*g) - old_vel, 0)
+  // = (0, -dt*g, 0). So, for any particle, its velocity here should just be its
+  // original velocity at initialization, minus dt*g in the vertical (y)
+  // component!
+  assert(FuzzyEquals(particles[0].vel[0], 10.0));
+  const double dt_times_g = 0.001111112 * 9.80665;
+  assert(FuzzyEquals(particles[0].vel[1], 20.0 - dt_times_g));
+  assert(FuzzyEquals(particles[0].vel[2], 30.0));
+  assert(FuzzyEquals(particles[1].vel[0], 30.0));
+  assert(FuzzyEquals(particles[1].vel[1], 10.0 - dt_times_g));
+  assert(FuzzyEquals(particles[1].vel[2], 20.0));
+}
+
+void TestGridToParticlePicFlip(int argc, char** argv) {
+  std::vector<Particle> particles = GridToParticle(argc, argv, 0.9);
+
+  // By the argument above, new_velocity = (newx, newy, newz) differs from
+  // old_velocity = (oldx, oldy, oldz) only in the vertical (y) coordinate.
+  // newx = oldx, newy = oldy - dt*g, and newz = oldz. So,
+  // 0.9 * (particle_velocity - old_velocity) + new_velocity
+  // = 0.9 * particle_vel - 0.9 * old_velocity + new_velocity
+  // = 0.9 * particle_vel - 0.9 * (oldx, oldy, oldz) + (newx, newy, newz)
+  // = 0.9 * particle_vel - 0.9 * (oldx, oldy, oldz) + (oldx, oldy-dt*g, oldz)
+  // = 0.9 * particle_vel + (1-0.9)*(oldx, oldy, oldz) + (0, -dt*g, 0)
+  // = 0.9 * particle_vel + 0.1 * old_velocity + (0, -dt*g, 0)
+  // Well, oldx = newx, oldy = newy + dt*g, oldz = newz, so the above is:
+  // = 0.9 * particle_vel + 0.1 * [new_velocity + (0, dt*g, 0)] + (0, -dt*g, 0)
+  // = 0.9 * particle_vel + 0.1 * new_velocity + (0.1 - 1)*(0, dt*g, 0)
+  // = 0.9 * particle_vel + 0.1 * new_velocity - 0.9 * (0, dt*g, 0)
+  assert(FuzzyEquals(
+      particles[0].vel[0],
+      0.9 * 10.0 + 0.1 * 17.93213828425096030729833546734955185659411011523));
+  const double dt_times_g = 0.001111112 * 9.80665;
+  assert(FuzzyEquals(
+      particles[0].vel[1],
+      0.9 * 20.0 + 0.1 * 15.79823647448566534776657956949110364563891999502 -
+          0.9 * dt_times_g));
+  assert(FuzzyEquals(
+      particles[0].vel[2],
+      0.9 * 30.0 + 0.1 * 25.78170386219921823636993915631686529519346856808));
+  assert(FuzzyEquals(
+      particles[1].vel[0],
+      0.9 * 30.0 + 0.1 * 22.06786171574903969270166453265044814340588988476));
+  assert(FuzzyEquals(
+      particles[1].vel[1],
+      0.9 * 10.0 + 0.1 * 14.17997095252473465223342043050889635436108000498 -
+          0.9 * dt_times_g));
+  assert(FuzzyEquals(
+      particles[1].vel[2],
+      0.9 * 20.0 + 0.1 * 24.21829613780078176363006084368313470480653143192));
+}
+
 }  // namespace
 
 // Test the public interface of StaggeredGrid.
@@ -874,6 +1153,11 @@ int main(int argc, char** argv) {
 
   // On a separate grid, test pressure projection.
   TestPressureProjection(argc, argv);
+
+  // On a separate grid, test grid-to-particle velocity transfer.
+  TestGridToParticlePurePic(argc, argv);
+  TestGridToParticlePureFlip(argc, argv);
+  TestGridToParticlePicFlip(argc, argv);
 
   // If nothing crashed up until this point, everything worked correctly!
   std::cout << "All StaggeredGrid assertion tests passed!" << std::endl;

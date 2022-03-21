@@ -259,11 +259,23 @@ StaggeredGrid::~StaggeredGrid() {}
 
 Eigen::Vector3d StaggeredGrid::Advect(const Eigen::Vector3d& pos,
                                       double dt) const {
+  Eigen::Vector3d interpolated_velocity = InterpolateCurrentGridVelocities(pos);
+  return ClampToNonSolidCells(pos + dt * interpolated_velocity);
+}
+
+Eigen::Vector3d StaggeredGrid::InterpolateCurrentGridVelocities(
+    const Eigen::Vector3d& pos) const {
+  return InterpolateTheseGridVelocities(pos, u_, v_, w_);
+}
+
+Eigen::Vector3d StaggeredGrid::InterpolateTheseGridVelocities(
+    const Eigen::Vector3d& pos, const Array3D<double>& u,
+    const Array3D<double>& v, const Array3D<double>& w) const {
   Eigen::Vector3d p_lc(pos - lc_);
-  double u_p = InterpolateGridVelocities(p_lc - half_shift_yz_, u_, dx_);
-  double v_p = InterpolateGridVelocities(p_lc - half_shift_xz_, v_, dx_);
-  double w_p = InterpolateGridVelocities(p_lc - half_shift_xy_, w_, dx_);
-  return ClampToNonSolidCells(pos + dt * Eigen::Vector3d(u_p, v_p, w_p));
+  double u_p = InterpolateGridVelocities(p_lc - half_shift_yz_, u, dx_);
+  double v_p = InterpolateGridVelocities(p_lc - half_shift_xz_, v, dx_);
+  double w_p = InterpolateGridVelocities(p_lc - half_shift_xy_, w, dx_);
+  return Eigen::Vector3d(u_p, v_p, w_p);
 }
 
 inline Eigen::Vector3d StaggeredGrid::ClampToNonSolidCells(
@@ -304,6 +316,8 @@ void StaggeredGrid::ParticlesToGrid(const std::vector<Particle>& particles) {
   NormalizeHorizontalVelocities();
   NormalizeVerticalVelocities();
   NormalizeDepthVelocities();
+
+  StoreNormalizedVelocities();
 
   SetBoundaryVelocities();
 }
@@ -417,6 +431,14 @@ void StaggeredGrid::NormalizeDepthVelocities() {
   }
 }
 
+void StaggeredGrid::StoreNormalizedVelocities() {
+  // Store the normalized grid velocities so they can be used for mapping
+  // velocities from particles back to the grid before this time step ends.
+  fu_.SetEqualTo(u_);
+  fv_.SetEqualTo(v_);
+  fw_.SetEqualTo(w_);
+}
+
 void StaggeredGrid::SetBoundaryVelocities() {
   // These are the "boundary conditions."
 
@@ -524,4 +546,43 @@ void StaggeredGrid::SubtractPressureGradientFromVelocity() {
       }
     }
   }
+}
+
+Eigen::Vector3d StaggeredGrid::GridToParticle(double flip_ratio,
+                                              const Particle& particle) const {
+  Eigen::Vector3d old_velocity = InterpolateOldGridVelocities(particle.pos);
+  Eigen::Vector3d new_velocity = InterpolateCurrentGridVelocities(particle.pos);
+
+  // Blend the PIC and FLIP velocity updates.
+  //
+  // If |flip_ratio| is zero, then this is a pure PIC update, with the particle
+  // velocity determined solely based on interpolating grid velocities. If
+  // |flip_ratio| is one, this is a pure FLIP update, with the particle velocity
+  // determined entirely by the *change* in interpolated grid velocities,
+  // |new_velocity| - |old_velocity|, from one time step to the next.
+  //
+  // In PIC, velocities themselves are interpolated in each time step from
+  // particles to the grid, then from the grid back to the particles, leading to
+  // significant smoothing or dissipation. This results in a loss of realism in
+  // the fluid flow, e.g., a loss of more splashy or turbulent flow that we
+  // might have expected to see, although this does make PIC very stable. FLIP
+  // interpolates velocity *changes* rather than velocities themselves, which
+  // avoids PIC's dissipation, but can lead to buildup of unstable, noisy
+  // errors.
+  //
+  // Typically, a |flip_ratio| very close to, but strictly less than, one is
+  // chosen to get the realistic, splashy, noisy flow we expect from inviscid
+  // fluids (viscosity, smoothing, and dissipation all refer to the same thing
+  // here, a damping of the flow, i.e., a tendency to drive fluid velocity to
+  // zero). "Inviscid" thus means letting fluid velocity not be damped out and
+  // letting splashing and turbulence happen, as is often desired in, e.g.,
+  // animations of water in computer graphics. To push back against the tendency
+  // for too much noise buildup in FLIP though, we keep the |flip_ratio| just
+  // below one to include a small amount of PIC's smoothing tendency.
+  return flip_ratio * (particle.vel - old_velocity) + new_velocity;
+}
+
+Eigen::Vector3d StaggeredGrid::InterpolateOldGridVelocities(
+    const Eigen::Vector3d& pos) const {
+  return InterpolateTheseGridVelocities(pos, fu_, fv_, fw_);
 }

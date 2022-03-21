@@ -49,12 +49,31 @@ class StaggeredGrid {
   // the next time step that are as divergence-free as possible.
   void ProjectPressure();
 
+  // Returns the velocity for a |particle| resulting from transferring grid
+  // velocities back to the particle using the provided |flip_ratio| to combine
+  // FLIP and PIC velocity transfers.
+  Eigen::Vector3d GridToParticle(double flip_ratio,
+                                 const Particle& particle) const;
+
  private:
   // Don't allow copy constructor to be called.
   StaggeredGrid(const StaggeredGrid& other);
 
   // Don't allow copy-assignment operator to be called.
   StaggeredGrid& operator=(const StaggeredGrid& other);
+
+  // Returns the result of interpolating grid velocities stored in |u_|, |v_|,
+  // and |w_| at the point |pos|. These are the "current" grid velocities, which
+  // change during a single time step of the simulation as boundary conditions
+  // are enforced, gravity is applied, and pressure projection is completed.
+  Eigen::Vector3d InterpolateCurrentGridVelocities(
+      const Eigen::Vector3d& pos) const;
+
+  // Returns the result of interpolating the grid velocities stored in |u|, |v|,
+  // and |w| at the point |pos|.
+  Eigen::Vector3d InterpolateTheseGridVelocities(
+      const Eigen::Vector3d& pos, const Array3D<double>& u,
+      const Array3D<double>& v, const Array3D<double>& w) const;
 
   // Returns the result of clamping |pos| to stay within the non-SOLID cells
   // with a small floating-point buffer.
@@ -74,11 +93,29 @@ class StaggeredGrid {
   void NormalizeVerticalVelocities();
   void NormalizeDepthVelocities();
 
+  // Sets |fu_| = |u_|, |fv_| = |v_|, and |fw_| = |w_|.
+  //
+  // This saves the normalized grid velocities before boundary condition
+  // setting, gravity application, and pressure projection alter the grid
+  // velocities; the latter updates the grid velocities to be for the next time
+  // step, but afterwards, before the current time step is over, we must
+  // transfer the particle velocities back to the grid using the current time
+  // step's normalized velocities, which we "remember" using |fu_|, |fv_|, and
+  // |fw_| for this second purpose during each time step.
+  void StoreNormalizedVelocities();
+
   // Sets boundary conditions on the grid velocities.
   void SetBoundaryVelocities();
 
   // Updates grid velocity values based on the pressure gradient.
   void SubtractPressureGradientFromVelocity();
+
+  // Returns the result of interpolating, at the point |pos|, grid velocities
+  // stored in |fu_|, |fv_|, and |fw_|, which are the grid velocities saved
+  // before enforcing boundary conditions, applying gravity, and projecting
+  // pressure.
+  Eigen::Vector3d InterpolateOldGridVelocities(
+      const Eigen::Vector3d& pos) const;
 
   // Number of rows of data this array stores (x or i direction)
   const std::size_t nx_;
@@ -118,7 +155,14 @@ class StaggeredGrid {
   // 3D array of depth (z direction) velocity components
   Array3D<double> w_;
 
-  // Accumulated particle velocity-weights for each grid velocity component
+  // Accumulated particle velocity-weights for each grid velocity component when
+  // splatting is completed in the ParticlesToGrid function
+  //
+  // By the time the ParticlesToGrid function terminates, however, these
+  // represent the normalized grid velocities, which are stored and used as the
+  // "old" velocities when transferring velocities from particles back to the
+  // grid after the "current" velocities have become modified by boundary
+  // condition enforcement, gravity application, and pressure projection.
   Array3D<double> fu_;  // horizontal
   Array3D<double> fv_;  // vertical
   Array3D<double> fw_;  // depth
