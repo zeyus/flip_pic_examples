@@ -384,6 +384,16 @@ void StaggeredGrid::SetParticlesCellToFluid(const Eigen::Vector3d& p_lc) {
 }
 
 void StaggeredGrid::NormalizeHorizontalVelocities() {
+  // Set boundary velocities to zero.
+  for (std::size_t j = 0; j < ny_; j++) {
+    for (std::size_t k = 0; k < nz_; k++) {
+      u_(0, j, k) = 0.0;
+      u_(1, j, k) = 0.0;
+      u_(nx_ - 1, j, k) = 0.0;
+      u_(nx_, j, k) = 0.0;
+    }
+  }
+
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
   for (std::size_t i = 2; i < nx_ - 1; i++) {
@@ -400,6 +410,16 @@ void StaggeredGrid::NormalizeHorizontalVelocities() {
 }
 
 void StaggeredGrid::NormalizeVerticalVelocities() {
+  // Set boundary velocities to zero.
+  for (std::size_t i = 0; i < nx_; i++) {
+    for (std::size_t k = 0; k < nz_; k++) {
+      v_(i, 0, k) = 0.0;
+      v_(i, 1, k) = 0.0;
+      v_(i, ny_ - 1, k) = 0.0;
+      v_(i, ny_, k) = 0.0;
+    }
+  }
+
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
   for (std::size_t i = 0; i < nx_; i++) {
@@ -416,6 +436,16 @@ void StaggeredGrid::NormalizeVerticalVelocities() {
 }
 
 void StaggeredGrid::NormalizeDepthVelocities() {
+  // Set boundary velocities to zero.
+  for (std::size_t i = 0; i < nx_; i++) {
+    for (std::size_t j = 0; j < ny_; j++) {
+      w_(i, j, 0) = 0.0;
+      w_(i, j, 1) = 0.0;
+      w_(i, j, nz_ - 1) = 0.0;
+      w_(i, j, nz_) = 0.0;
+    }
+  }
+
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
   for (std::size_t i = 0; i < nx_; i++) {
