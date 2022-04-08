@@ -19,11 +19,10 @@ typedef Eigen::Matrix<std::size_t, 3, 1> GridIndices;
 const double kFloatZero = 1.0e-6;
 const double kClampCushion = 1.0e-4;
 
-// For consistency with Bargteil and Shinar's code, we change gravitational
-// acceleration from 9.80665 to 9.8. This makes a small visual difference in the
-// resulting simulation, mainly with individual fluid particles hovering over
-// the fluid surface for less time in the latter case.
-const double kGravAccMetersPerSecond = 9.8;  // changed from 9.80665;
+// To make the simulation evem more closely match Bargteil and Shinar's output,
+// change this to 9.8. This does lead to a visual change where individual fluid
+// particles hover over the main fluid surface for less time.
+const double kGravAccMetersPerSecond = 9.80665;
 
 Eigen::Vector3d HalfShiftYZ(double dx) {
   Eigen::Vector3d half_shift;

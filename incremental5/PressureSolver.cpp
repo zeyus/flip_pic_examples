@@ -112,7 +112,7 @@ void PressureSolver::ProjectPressure(const Array3D<MaterialType>& labels,
     p->PlusEquals(alpha, d_);   // *p += alpha * d_
     r_.PlusEquals(-alpha, q_);  // r_ -= alpha * q_
     double sigma_old = sigma;
-    double sigma = Dot(r_, r_);
+    sigma = Dot(r_, r_);
     double beta = sigma / sigma_old;
     d_.EqualsPlusTimes(r_, beta, d_);  // d_ = r_ + beta * d_
   }
