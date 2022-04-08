@@ -1,4 +1,4 @@
-#include <cassert>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -8,22 +8,25 @@
 
 namespace {
 
-Eigen::Vector3d Make3d(double x, double y, double z) {
-  Eigen::Vector3d p;
-  p << x, y, z;
-  return p;
+void Write3d(const Eigen::Vector3d& vec, std::ofstream* out) {
+  (*out) << vec[0] << " " << vec[1] << " " << vec[2];
 }
 
-Particle MakeParticle(double x, double y, double z, double vx, double vy,
-                      double vz) {
-  return Particle{.pos = Make3d(x, y, z), .vel = Make3d(vx, vy, vz)};
-}
-
-// Returns the array of Particles with their initial positions and velocities
-// specified in |input_file|.
-std::vector<Particle> ReadParticles(const std::string& input_file) {
-  // particles.push_back(MakeParticle(2.75, 3.25, 2.5, 10.0, 20.0, 30.0));
-  // particles.push_back(MakeParticle(3.125, 3.125, 2.5, 30.0, 10.0, 20.0));
+// Writes the position and velocity of each particle to the file with the
+// specified |output_file_name|.
+void WriteParticles(const char* output_file_name,
+                    const std::vector<Particle>& particles) {
+  std::ofstream out(output_file_name, std::ios::out);
+  out << particles.size() << std::endl;
+  for (std::vector<Particle>::const_iterator p = particles.begin();
+       p != particles.end(); p++) {
+    Write3d(p->pos, &out);
+    out << " ";
+    Write3d(p->vel, &out);
+    out << std::endl;
+  }
+  out.close();
+  std::cout << "Output file " << output_file_name << " saved." << std::endl;
 }
 
 }  // namespace
@@ -33,30 +36,42 @@ std::vector<Particle> ReadParticles(const std::string& input_file) {
 int main(int argc, char** argv) {
   SimulationParameters params = ReadSimulationParameters(argc, argv);
 
-  std::size_t nx = 9, ny = 7, nz = 5;
-  Eigen::Vector3d lower_corner(0.0, 0.0, 0.0);
-  double dx = 1.0;
-  StaggeredGrid grid(nx, ny, nz, lower_corner, dx);
+  StaggeredGrid grid(params.nx(), params.ny(), params.nz(), params.lc(),
+                     params.dx());
 
   std::vector<Particle> particles = ReadParticles(params.input_file());
 
   grid.ParticlesToGrid(particles);
 
-  // Advect particles
-  for (std::vector<Particle>::iterator p = particles.begin();
-       p != particles.end(); p++) {
-    // OKAY TO RETURN EIGEN::VECTOR3D LIKE THIS??
-    p->pos = grid.Advect(p->pos, params.dt_seconds());
-  }
+  char output_file_name[100];
+  int frame = 0;
+  const double kFirstPositiveFrameTime = 1.0 / 30.0 - 0.0001;
+  for (double time = 0.0, frame_time = -1.0; time < params.duration_seconds();
+       time += params.dt_seconds(), frame_time -= params.dt_seconds()) {
+    if (frame_time < 0.0) {
+      sprintf(output_file_name, params.output_file_name_pattern().c_str(),
+              frame);
+      WriteParticles(output_file_name, particles);
+      frame_time = kFirstPositiveFrameTime;
+      frame++;
+    }
 
-  grid.ApplyGravity(params.dt_seconds());
+    // Advect particles
+    for (std::vector<Particle>::iterator p = particles.begin();
+         p != particles.end(); p++) {
+      p->pos = grid.Advect(p->pos, params.dt_seconds());
+    }
 
-  grid.ProjectPressure();
+    grid.ParticlesToGrid(particles);
 
-  for (std::vector<Particle>::iterator p = particles.begin();
-       p != particles.end(); p++) {
-    // OKAY TO RETURN EIGEN::VECTOR3D LIKE THIS??
-    p->vel = grid.GridToParticle(flip_ratio, *p);
+    grid.ApplyGravity(params.dt_seconds());
+
+    grid.ProjectPressure();
+
+    for (std::vector<Particle>::iterator p = particles.begin();
+         p != particles.end(); p++) {
+      p->vel = grid.GridToParticle(params.flip_ratio(), *p);
+    }
   }
 
   return EXIT_SUCCESS;
