@@ -1,0 +1,9 @@
+make
+./RunFluidSimulator
+./GenerateMovie
+
+Then watch the movie, out.mp4
+
+To clean up:
+./CleanFiles
+make clean
