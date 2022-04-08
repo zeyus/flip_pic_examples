@@ -2,3 +2,4 @@
 rm fluid.*.part
 rm test_image_*.png
 rm out.mp4
+rm out.gif

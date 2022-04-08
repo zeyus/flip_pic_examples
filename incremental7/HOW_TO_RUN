@@ -1,8 +1,17 @@
 make
 ./RunFluidSimulator
-./GenerateMovie
+./ParticleViewer fluid.%03d.part
 
-Then watch the movie, out.mp4
+Then, do either:
+   ./GenerateMovie
+OR
+   ./GenerateGIF
+
+Then watch the movie, out.mp4 or out.gif. To open either of these from the
+command line directly in Ubuntu, just run:
+   xdg-open out.mp4
+OR
+   xdg-open out.gif
 
 To clean up:
 ./CleanFiles
