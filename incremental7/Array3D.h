@@ -2,7 +2,6 @@
 #define ARRAY3D_H_
 
 #include <cassert>
-#include <cstdio>
 
 // To disable assert*() calls, uncomment this line:
 // #define NDEBUG
