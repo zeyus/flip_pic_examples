@@ -10,7 +10,7 @@ class SimulationParameters {
   // Creates a new set of configuration settings for a simulation.
   SimulationParameters(double dt_seconds, double duration_seconds,
                        double density,
-                       const Eigen::Matrix<std::size_t, 3, 1>& dimensions,
+                       const Eigen::Matrix<size_t, 3, 1>& dimensions,
                        double dx, const Eigen::Vector3d& lc, double flip_ratio,
                        const std::string& input_file,
                        const std::string& output_file_name_pattern);
@@ -64,9 +64,9 @@ class SimulationParameters {
   double dt_seconds() const { return dt_seconds_; }
   double duration_seconds() const { return duration_seconds_; }
   double density() const { return density_; }
-  std::size_t nx() const { return dimensions_[0]; }
-  std::size_t ny() const { return dimensions_[1]; }
-  std::size_t nz() const { return dimensions_[2]; }
+  size_t nx() const { return dimensions_[0]; }
+  size_t ny() const { return dimensions_[1]; }
+  size_t nz() const { return dimensions_[2]; }
   double dx() const { return dx_; }
   const Eigen::Vector3d& lc() const { return lc_; }
   double flip_ratio() const { return flip_ratio_; }
@@ -89,7 +89,7 @@ class SimulationParameters {
   const double density_;
 
   // Number of grid cells in each coordinate direction: (nx, ny, nz)
-  const Eigen::Matrix<std::size_t, 3, 1> dimensions_;
+  const Eigen::Matrix<size_t, 3, 1> dimensions_;
 
   // Width (side length) of each grid cell--all are assumed to be cubes
   const double dx_;

@@ -11,16 +11,16 @@ void SetValues(Array3D<int>* table_ptr) {
 
 // Gets the value at indices (i, j, k) in a const |*table_ptr|. No bounds
 // checking of indices is done.
-int GetValue(const Array3D<int>* table_ptr, std::size_t i, std::size_t j,
-             std::size_t k) {
+int GetValue(const Array3D<int>* table_ptr, size_t i, size_t j,
+             size_t k) {
   return (*table_ptr)(i, j, k);
 }
 
 // Reports whether all values in |*table_ptr| are -19.
 void CheckValue(const Array3D<int>* table_ptr) {
-  for (std::size_t i = 0; i < table_ptr->nx(); i++) {
-    for (std::size_t j = 0; j < table_ptr->ny(); j++) {
-      for (std::size_t k = 0; k < table_ptr->nz(); k++) {
+  for (size_t i = 0; i < table_ptr->nx(); i++) {
+    for (size_t j = 0; j < table_ptr->ny(); j++) {
+      for (size_t k = 0; k < table_ptr->nz(); k++) {
         if ((*table_ptr)(i, j, k) != -19) {
           std::cout << "Element (" << i << ", " << j << ", " << k
                     << ") is not -19!" << std::endl;
@@ -35,9 +35,9 @@ void CheckValue(const Array3D<int>* table_ptr) {
 
 // Reports whether all values are as expected after calling PlusEquals(..).
 void CheckPlusEquals(const Array3D<int>* table_ptr) {
-  for (std::size_t i = 0; i < table_ptr->nx(); i++) {
-    for (std::size_t j = 0; j < table_ptr->ny(); j++) {
-      for (std::size_t k = 0; k < table_ptr->nz(); k++) {
+  for (size_t i = 0; i < table_ptr->nx(); i++) {
+    for (size_t j = 0; j < table_ptr->ny(); j++) {
+      for (size_t k = 0; k < table_ptr->nz(); k++) {
         if ((*table_ptr)(i, j, k) != 190) {
           std::cout << "Element (" << i << ", " << j << ", " << k
                     << ") is not 190!" << std::endl;
@@ -52,9 +52,9 @@ void CheckPlusEquals(const Array3D<int>* table_ptr) {
 
 // Reports whether all values are as expected after calling EqualsPlusTimes(..).
 void CheckEqualsPlusTimes(const Array3D<int>* table_ptr) {
-  for (std::size_t i = 0; i < table_ptr->nx(); i++) {
-    for (std::size_t j = 0; j < table_ptr->ny(); j++) {
-      for (std::size_t k = 0; k < table_ptr->nz(); k++) {
+  for (size_t i = 0; i < table_ptr->nx(); i++) {
+    for (size_t j = 0; j < table_ptr->ny(); j++) {
+      for (size_t k = 0; k < table_ptr->nz(); k++) {
         if ((*table_ptr)(i, j, k) != -380) {
           std::cout << "Element (" << i << ", " << j << ", " << k
                     << ") is not -380!" << std::endl;

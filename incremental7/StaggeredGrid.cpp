@@ -14,7 +14,7 @@ namespace {
 // [ i ]
 // [ j ]
 // [ k ]
-typedef Eigen::Matrix<std::size_t, 3, 1> GridIndices;
+typedef Eigen::Matrix<size_t, 3, 1> GridIndices;
 
 const double kFloatZero = 1.0e-6;
 const double kClampCushion = 1.0e-4;
@@ -58,7 +58,7 @@ inline GridIndices floor(const Eigen::Vector3d& p_lc_over_dx) {
 
   // Indices are valid. Construct and return them.
   // This casts the elements of the vector above as nonnegative integers.
-  return p_lc_over_dx.cast<std::size_t>();
+  return p_lc_over_dx.cast<size_t>();
 }
 
 // Returns the indices of the grid cell containing the point |p_lc| in a grid
@@ -110,9 +110,9 @@ double InterpolateGridVelocities(
   double om_w1 = 1.0 - w1;
   double w2 = weights[2];
   double om_w2 = 1.0 - w2;
-  std::size_t i = ijk[0];
-  std::size_t j = ijk[1];
-  std::size_t k = ijk[2];
+  size_t i = ijk[0];
+  size_t j = ijk[1];
+  size_t k = ijk[2];
 
   // Trilinearly interpolate grid velocities to get a velocity for the particle.
   return om_w0 * om_w1 * om_w2 * grid_vels(i, j, k) +
@@ -127,7 +127,7 @@ double InterpolateGridVelocities(
 
 void Contribute(double weight, double particle_velocity,
                 Array3D<double>* grid_vels, Array3D<double>* grid_vel_weights,
-                std::size_t i, std::size_t j, std::size_t k) {
+                size_t i, size_t j, size_t k) {
   (*grid_vels)(i, j, k) += weight * particle_velocity;
   (*grid_vel_weights)(i, j, k) += weight;
 }
@@ -150,9 +150,9 @@ void Splat(const Eigen::Vector3d& shifted_particle_position_lc, double dx,
   double om_w1 = 1.0 - w1;
   double w2 = weights[2];
   double om_w2 = 1.0 - w2;
-  std::size_t i = ijk[0];
-  std::size_t j = ijk[1];
-  std::size_t k = ijk[2];
+  size_t i = ijk[0];
+  size_t j = ijk[1];
+  size_t k = ijk[2];
 
   Contribute(om_w0 * om_w1 * om_w2, particle_velocity, grid_vels,
              grid_vel_weights, i, j, k);
@@ -173,7 +173,7 @@ void Splat(const Eigen::Vector3d& shifted_particle_position_lc, double dx,
 }
 
 MaterialType GetNeighborMaterial(const Array3D<MaterialType>& cell_labels,
-                                 std::size_t i, std::size_t j, std::size_t k,
+                                 size_t i, size_t j, size_t k,
                                  NeighborDirection dir) {
   switch (dir) {
     case LEFT:
@@ -214,9 +214,9 @@ void MakeNeighborMaterialInfo(const Array3D<MaterialType>& cell_labels,
                               Array3D<unsigned short>* neighbors) {
   (*neighbors) = 0u;
 
-  for (std::size_t i = 1; i < cell_labels.nx() - 1; i++) {
-    for (std::size_t j = 1; j < cell_labels.ny() - 1; j++) {
-      for (std::size_t k = 1; k < cell_labels.nz() - 1; k++) {
+  for (size_t i = 1; i < cell_labels.nx() - 1; i++) {
+    for (size_t j = 1; j < cell_labels.ny() - 1; j++) {
+      for (size_t k = 1; k < cell_labels.nz() - 1; k++) {
         if (cell_labels(i, j, k) != FLUID) {
           continue;
         }
@@ -236,7 +236,7 @@ void MakeNeighborMaterialInfo(const Array3D<MaterialType>& cell_labels,
 
 }  // namespace
 
-StaggeredGrid::StaggeredGrid(std::size_t nx, std::size_t ny, std::size_t nz,
+StaggeredGrid::StaggeredGrid(size_t nx, size_t ny, size_t nz,
                              const Eigen::Vector3d& lc, double dx)
     : nx_(nx),
       ny_(ny),
@@ -287,7 +287,7 @@ inline Eigen::Vector3d StaggeredGrid::ClampToNonSolidCells(
   Eigen::Vector3d clamped_pos = pos;
   const double cell_plus_cushion = dx_ + kClampCushion;
 
-  for (std::size_t i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     double min = lc_[i] + cell_plus_cushion;
     if (pos[i] <= min) {
       clamped_pos[i] = min;
@@ -348,24 +348,24 @@ void StaggeredGrid::SetOuterCellLabelsToSolid() {
   // simulation.
 
   // All grid cells on the left and right faces of the grid are solid.
-  for (std::size_t j = 0; j < ny_; j++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t j = 0; j < ny_; j++) {
+    for (size_t k = 0; k < nz_; k++) {
       cell_labels_(0, j, k) = MaterialType::SOLID;
       cell_labels_(nx_ - 1, j, k) = MaterialType::SOLID;
     }
   }
 
   // All grid cells on the bottom and top faces of the grid are solid.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t k = 0; k < nz_; k++) {
       cell_labels_(i, 0, k) = MaterialType::SOLID;
       cell_labels_(i, ny_ - 1, k) = MaterialType::SOLID;
     }
   }
 
   // All grid cells on the back and front faces of the grid are solid.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
       cell_labels_(i, j, 0) = MaterialType::SOLID;
       cell_labels_(i, j, nz_ - 1) = MaterialType::SOLID;
     }
@@ -373,9 +373,9 @@ void StaggeredGrid::SetOuterCellLabelsToSolid() {
 }
 
 void StaggeredGrid::SetInnerCellLabelsToEmpty() {
-  for (std::size_t i = 1; i < nx_ - 1; i++) {
-    for (std::size_t j = 1; j < ny_ - 1; j++) {
-      for (std::size_t k = 1; k < nz_ - 1; k++) {
+  for (size_t i = 1; i < nx_ - 1; i++) {
+    for (size_t j = 1; j < ny_ - 1; j++) {
+      for (size_t k = 1; k < nz_ - 1; k++) {
         cell_labels_(i, j, k) = MaterialType::EMPTY;
       }
     }
@@ -389,8 +389,8 @@ void StaggeredGrid::SetParticlesCellToFluid(const Eigen::Vector3d& p_lc) {
 
 void StaggeredGrid::NormalizeHorizontalVelocities() {
   // Set boundary velocities to zero.
-  for (std::size_t j = 0; j < ny_; j++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t j = 0; j < ny_; j++) {
+    for (size_t k = 0; k < nz_; k++) {
       u_(0, j, k) = 0.0;
       u_(1, j, k) = 0.0;
       u_(nx_ - 1, j, k) = 0.0;
@@ -400,9 +400,9 @@ void StaggeredGrid::NormalizeHorizontalVelocities() {
 
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
-  for (std::size_t i = 2; i < nx_ - 1; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
-      for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 2; i < nx_ - 1; i++) {
+    for (size_t j = 0; j < ny_; j++) {
+      for (size_t k = 0; k < nz_; k++) {
         if (fu_(i, j, k) < kFloatZero) {
           u_(i, j, k) = 0.0;
           continue;
@@ -415,8 +415,8 @@ void StaggeredGrid::NormalizeHorizontalVelocities() {
 
 void StaggeredGrid::NormalizeVerticalVelocities() {
   // Set boundary velocities to zero.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t k = 0; k < nz_; k++) {
       v_(i, 0, k) = 0.0;
       v_(i, 1, k) = 0.0;
       v_(i, ny_ - 1, k) = 0.0;
@@ -426,9 +426,9 @@ void StaggeredGrid::NormalizeVerticalVelocities() {
 
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 2; j < ny_ - 1; j++) {
-      for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 2; j < ny_ - 1; j++) {
+      for (size_t k = 0; k < nz_; k++) {
         if (fv_(i, j, k) < kFloatZero) {
           v_(i, j, k) = 0.0;
           continue;
@@ -441,8 +441,8 @@ void StaggeredGrid::NormalizeVerticalVelocities() {
 
 void StaggeredGrid::NormalizeDepthVelocities() {
   // Set boundary velocities to zero.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
       w_(i, j, 0) = 0.0;
       w_(i, j, 1) = 0.0;
       w_(i, j, nz_ - 1) = 0.0;
@@ -452,9 +452,9 @@ void StaggeredGrid::NormalizeDepthVelocities() {
 
   // Normalize the non-boundary velocities unless the corresponding
   // velocity-weight is small.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
-      for (std::size_t k = 2; k < nz_ - 1; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
+      for (size_t k = 2; k < nz_ - 1; k++) {
         if (fw_(i, j, k) < kFloatZero) {
           w_(i, j, k) = 0.0;
           continue;
@@ -476,8 +476,8 @@ void StaggeredGrid::StoreNormalizedVelocities() {
 void StaggeredGrid::SetBoundaryVelocities() {
   // These are the "boundary conditions."
 
-  for (std::size_t j = 0; j < ny_; j++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t j = 0; j < ny_; j++) {
+    for (size_t k = 0; k < nz_; k++) {
       // Zero out horizontal velocities on either side of each grid cell on the
       // left and right boundary walls of the grid.
       u_(0, j, k) = 0.0;
@@ -495,8 +495,8 @@ void StaggeredGrid::SetBoundaryVelocities() {
     }
   }
 
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t k = 0; k < nz_; k++) {
       // Zero out vertical velocities on either side of each grid cell on the
       // bottom and top boundary walls of the grid.
       v_(i, 0, k) = 0.0;
@@ -514,8 +514,8 @@ void StaggeredGrid::SetBoundaryVelocities() {
     }
   }
 
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
       // Zero out depth velocities on either side of each grid cell on the back
       // and front boundary walls of the grid.
       w_(i, j, 0) = 0.0;
@@ -536,18 +536,18 @@ void StaggeredGrid::SetBoundaryVelocities() {
 
 void StaggeredGrid::ApplyGravity(double dt) {
   double vertical_velocity_change = -dt * kGravAccMetersPerSecond;
-  /*for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_ + 1; j++) {
-      for (std::size_t k = 0; k < nz_; k++) {
+  /*for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_ + 1; j++) {
+      for (size_t k = 0; k < nz_; k++) {
         v_(i, j, k) += vertical_velocity_change;
       }
     }
   }*/
   // Shifting gravity to act along z-axis for consistency with Bargteil and
   // Shinar's code
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
-      for (std::size_t k = 0; k < nz_ + 1; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
+      for (size_t k = 0; k < nz_ + 1; k++) {
         w_(i, j, k) += vertical_velocity_change;
       }
     }
@@ -570,9 +570,9 @@ void StaggeredGrid::ProjectPressure() {
 }
 
 void StaggeredGrid::SubtractPressureGradientFromVelocity() {
-  for (std::size_t i = 1; i < nx_ - 1; i++) {
-    for (std::size_t j = 1; j < ny_ - 1; j++) {
-      for (std::size_t k = 1; k < nz_ - 1; k++) {
+  for (size_t i = 1; i < nx_ - 1; i++) {
+    for (size_t j = 1; j < ny_ - 1; j++) {
+      for (size_t k = 1; k < nz_ - 1; k++) {
         if (cell_labels_(i, j, k) == SOLID) {
           continue;
         }

@@ -2,6 +2,7 @@
 #define ARRAY3D_H_
 
 #include <cassert>
+#include <cstdio>
 
 // To disable assert*() calls, uncomment this line:
 // #define NDEBUG
@@ -10,7 +11,7 @@ template <typename T>
 class Array3D {
  public:
   // Allocates a 3D array with |nx| rows, |ny| columns, and depth |nz|.
-  inline Array3D(std::size_t nx, std::size_t ny, std::size_t nz);
+  inline Array3D(size_t nx, size_t ny, size_t nz);
 
   // Sets |*this| = |other|.
   // We use this function instead of operator= to prevent any automatic calls to
@@ -21,16 +22,16 @@ class Array3D {
   // Deallocates the array.
   inline ~Array3D();
 
-  std::size_t nx() const { return nx_; }
-  std::size_t ny() const { return ny_; }
-  std::size_t nz() const { return nz_; }
+  size_t nx() const { return nx_; }
+  size_t ny() const { return ny_; }
+  size_t nz() const { return nz_; }
 
   // Returns the element at index (|i|, |j|, |k|) of this array.
-  inline const T& operator()(std::size_t i, std::size_t j, std::size_t k) const;
+  inline const T& operator()(size_t i, size_t j, size_t k) const;
 
   // Returns a modifiable reference to the element at index (|i|, |j|,
   // |k|) of this array.
-  inline T& operator()(std::size_t i, std::size_t j, std::size_t k);
+  inline T& operator()(size_t i, size_t j, size_t k);
 
   // Sets all elements of this 3D array equal to |value|.
   inline const T& operator=(const T& value);
@@ -57,30 +58,30 @@ class Array3D {
   Array3D& operator=(const Array3D& other);
 
   // Number of rows of data this array stores (x or i direction)
-  const std::size_t nx_;
+  const size_t nx_;
 
   // Number of columns of data this array stores (y or j direction)
-  const std::size_t ny_;
+  const size_t ny_;
 
   // Depth of data this array stores (z or k direction)
-  const std::size_t nz_;
+  const size_t nz_;
 
   // Size of a single stack of this array's data, for convenience
-  const std::size_t ny_nz_;
+  const size_t ny_nz_;
 
   // The actual 3D data this array stores
   T* data_;
 };
 
 template <class T>
-inline Array3D<T>::Array3D(std::size_t nx, std::size_t ny, std::size_t nz)
+inline Array3D<T>::Array3D(size_t nx, size_t ny, size_t nz)
     : nx_(nx), ny_(ny), nz_(nz), ny_nz_(ny * nz), data_(new T[nx * ny_nz_]) {}
 
 template <class T>
 inline void Array3D<T>::SetEqualTo(const Array3D<T>& other) {
   T* data_pointer = data_;
   const T* other_data_pointer = other.data_;
-  for (std::size_t i = 0; i < nx_ * ny_nz_; i++) {
+  for (size_t i = 0; i < nx_ * ny_nz_; i++) {
     (*data_pointer) = (*other_data_pointer);
     data_pointer++;
     other_data_pointer++;
@@ -95,31 +96,32 @@ inline Array3D<T>::~Array3D() {
 }
 
 template <class T>
-inline const T& Array3D<T>::operator()(std::size_t i, std::size_t j,
-                                       std::size_t k) const {
+inline const T& Array3D<T>::operator()(size_t i, size_t j,
+                                       size_t k) const {
   return data_[i * ny_nz_ + j * nz_ + k];
 }
 
 template <class T>
-inline T& Array3D<T>::operator()(std::size_t i, std::size_t j, std::size_t k) {
+inline T& Array3D<T>::operator()(size_t i, size_t j, size_t k) {
   return data_[i * ny_nz_ + j * nz_ + k];
 }
 
 template <class T>
 inline const T& Array3D<T>::operator=(const T& value) {
   T* data_pointer = data_;
-  for (std::size_t i = 0; i < nx_ * ny_nz_; i++) {
+  for (size_t i = 0; i < nx_ * ny_nz_; i++) {
     (*data_pointer) = value;
     data_pointer++;
   }
+  return value;
 }
 
 template <class T>
 inline void Array3D<T>::PlusEquals(double scalar, const Array3D<T>& arr) {
   // |arr| and |*this| must have identical dimensions.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
-      for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
+      for (size_t k = 0; k < nz_; k++) {
         (*this)(i, j, k) += scalar * arr(i, j, k);
       }
     }
@@ -130,9 +132,9 @@ template <class T>
 inline void Array3D<T>::EqualsPlusTimes(const Array3D<T>& arr1, double scalar,
                                         const Array3D<T>& arr2) {
   // |arr1|, |arr2|, and |*this| must have identical dimensions.
-  for (std::size_t i = 0; i < nx_; i++) {
-    for (std::size_t j = 0; j < ny_; j++) {
-      for (std::size_t k = 0; k < nz_; k++) {
+  for (size_t i = 0; i < nx_; i++) {
+    for (size_t j = 0; j < ny_; j++) {
+      for (size_t k = 0; k < nz_; k++) {
         (*this)(i, j, k) = arr1(i, j, k) + scalar * arr2(i, j, k);
       }
     }
@@ -144,9 +146,9 @@ inline void Array3D<T>::EqualsPlusTimes(const Array3D<T>& arr1, double scalar,
 inline double Dot(const Array3D<double>& a1, const Array3D<double>& a2) {
   double dot = 0.0;
 
-  for (std::size_t i = 0; i < a1.nx(); i++) {
-    for (std::size_t j = 0; j < a1.ny(); j++) {
-      for (std::size_t k = 0; k < a1.nz(); k++) {
+  for (size_t i = 0; i < a1.nx(); i++) {
+    for (size_t j = 0; j < a1.ny(); j++) {
+      for (size_t k = 0; k < a1.nz(); k++) {
         dot += a1(i, j, k) * a2(i, j, k);
       }
     }

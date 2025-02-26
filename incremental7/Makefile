@@ -1,8 +1,9 @@
-CC          = g++ 
+CC          = clang++ 
 
 #-----------------------------------------
 #Optimization ----------------------------
 OPT   =  -O3
+#OPT   =  -DDEBUG
 
 #-----------------------------------------
 
@@ -12,8 +13,8 @@ OBJECTS = jsoncpp.o Particle.o PressureSolver.o SimulationParameters.o Staggered
 
 #-----------------------------------------
 
-CCOPTS = $(OPT) -I/usr/include/eigen3/
-LDOPTS = 
+CCOPTS = $(OPT) -g -std=c++17 -I/opt/homebrew/include/eigen3 -target arm64-apple-macos11
+LDOPTS = -std=c++17 -g -target arm64-apple-macos11 -framework OpenGL -framework GLUT -L/opt/homebrew/lib
 
 #-----------------------------------------
 #-----------------------------------------
@@ -27,17 +28,17 @@ clean:
 #-----------------------------------------
 
 Array3DTest: Array3DTest.o
-	$(CC) Array3DTest.o -o Array3DTest
+	$(CC) $(LDOPTS) Array3DTest.o -o Array3DTest
 
 StaggeredGridTest: $(OBJECTS) StaggeredGridTest.o
-	$(CC) $(OBJECTS) StaggeredGridTest.o -o StaggeredGridTest
+	$(CC) $(LDOPTS) $(OBJECTS) StaggeredGridTest.o -o StaggeredGridTest
 
 FluidSimulator: $(OBJECTS) FluidSimulator.o
 	$(CC) $(OBJECTS) $(LDOPTS) FluidSimulator.o -o FluidSimulator
 
-ParticleViewer: ParticleViewer.o
-	$(CC) ParticleViewer.o -o ParticleViewer -L/usr/lib/x86_64-linux-gnu/ -lGL -lglut -lGLU
 
+ParticleViewer: ParticleViewer.o
+	$(CC) $(LDOPTS) ParticleViewer.o -o ParticleViewer 
 #-----------------------------------------
 #-----------------------------------------
 
@@ -46,5 +47,3 @@ ParticleViewer: ParticleViewer.o
 
 #-----------------------------------------
 #-----------------------------------------
-
-

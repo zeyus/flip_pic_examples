@@ -10,7 +10,7 @@
 
 SimulationParameters::SimulationParameters(
     double dt_seconds, double duration_seconds, double density,
-    const Eigen::Matrix<std::size_t, 3, 1>& dimensions, double dx,
+    const Eigen::Matrix<size_t, 3, 1>& dimensions, double dx,
     const Eigen::Vector3d& lc, double flip_ratio, const std::string& input_file,
     const std::string& output_file_name_pattern)
     : dt_seconds_(dt_seconds),
@@ -54,7 +54,7 @@ SimulationParameters SimulationParameters::CreateFromJsonFile(
   int nx = json_root["res"][0].asInt();
   int ny = json_root["res"][1].asInt();
   int nz = json_root["res"][2].asInt();
-  Eigen::Matrix<std::size_t, 3, 1> dimensions;
+  Eigen::Matrix<size_t, 3, 1> dimensions;
   dimensions << nx, ny, nz;
 
   double dx = json_root["h"].asDouble();

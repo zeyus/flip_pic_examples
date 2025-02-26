@@ -18,11 +18,11 @@ void MakeResidualFromVelocityDivergence(const Array3D<MaterialType>& labels,
                                         const Array3D<double>& u,
                                         const Array3D<double>& v,
                                         const Array3D<double>& w,
-                                        std::size_t nx, std::size_t ny,
-                                        std::size_t nz, Array3D<double>* r) {
-  for (std::size_t i = 1; i < nx - 1; i++) {
-    for (std::size_t j = 1; j < ny - 1; j++) {
-      for (std::size_t k = 1; k < nz - 1; k++) {
+                                        size_t nx, size_t ny,
+                                        size_t nz, Array3D<double>* r) {
+  for (size_t i = 1; i < nx - 1; i++) {
+    for (size_t j = 1; j < ny - 1; j++) {
+      for (size_t k = 1; k < nz - 1; k++) {
         if (labels(i, j, k) != FLUID) {
           (*r)(i, j, k) = 0.0;
           continue;
@@ -45,13 +45,13 @@ void MakeResidualFromVelocityDivergence(const Array3D<MaterialType>& labels,
 // nonzero and multiply just the appropriate values from |d| matching with those
 // nonzero entries of A.
 void ATimes(const Array3D<double>& d, const Array3D<unsigned short>& neighbors,
-            std::size_t nx, std::size_t ny, std::size_t nz,
+            size_t nx, size_t ny, size_t nz,
             Array3D<double>* q) {
   const unsigned short CENTER = 7;
 
-  for (std::size_t i = 1; i < nx - 1; i++) {
-    for (std::size_t j = 1; j < ny - 1; j++) {
-      for (std::size_t k = 1; k < nz - 1; k++) {
+  for (size_t i = 1; i < nx - 1; i++) {
+    for (size_t j = 1; j < ny - 1; j++) {
+      for (size_t k = 1; k < nz - 1; k++) {
         unsigned short nbrs = neighbors(i, j, k);
 
         if (!nbrs) {
@@ -76,7 +76,7 @@ void ATimes(const Array3D<double>& d, const Array3D<unsigned short>& neighbors,
 
 }  // namespace
 
-PressureSolver::PressureSolver(std::size_t nx, std::size_t ny, std::size_t nz)
+PressureSolver::PressureSolver(size_t nx, size_t ny, size_t nz)
     : nx_(nx),
       ny_(ny),
       nz_(nz),
@@ -104,9 +104,9 @@ void PressureSolver::ProjectPressure(const Array3D<MaterialType>& labels,
   double sigma = Dot(r_, r_);
   const double kFloatZero = 1.0e-6;
   double tolerance = kFloatZero * sigma;
-  const std::size_t kMaxIters = 1000u;
+  const size_t kMaxIters = 1000u;
 
-  for (std::size_t iter = 0; iter < kMaxIters && sigma > tolerance; iter++) {
+  for (size_t iter = 0; iter < kMaxIters && sigma > tolerance; iter++) {
     ATimes(d_, neighbors, nx_, ny_, nz_, &q_);
     double alpha = sigma / Dot(d_, q_);
     p->PlusEquals(alpha, d_);   // *p += alpha * d_

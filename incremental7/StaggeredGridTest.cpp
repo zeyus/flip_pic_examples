@@ -29,9 +29,9 @@ bool FuzzyEquals(double a, double b) {
 bool FuzzyNotZero(double x) { return x > kFloatZero || x < -kFloatZero; }
 
 bool IsZero(const Array3D<double>* arr) {
-  for (std::size_t i = 0; i < arr->nx(); i++) {
-    for (std::size_t j = 0; j < arr->ny(); j++) {
-      for (std::size_t k = 0; k < arr->nz(); k++) {
+  for (size_t i = 0; i < arr->nx(); i++) {
+    for (size_t j = 0; j < arr->ny(); j++) {
+      for (size_t k = 0; k < arr->nz(); k++) {
         if (FuzzyNotZero((*arr)(i, j, k))) {
           return false;
         }
@@ -48,31 +48,31 @@ bool IsEmpty(MaterialType label) { return label == MaterialType::EMPTY; }
 
 bool IsFluid(MaterialType label) { return label == MaterialType::FLUID; }
 
-void CheckOuterCellsAreSolid(const StaggeredGrid& grid, std::size_t nx,
-                             std::size_t ny, std::size_t nz) {
+void CheckOuterCellsAreSolid(const StaggeredGrid& grid, size_t nx,
+                             size_t ny, size_t nz) {
   // Outer cell labels should be |SOLID|.
-  for (std::size_t j = 0; j < ny; j++) {
-    for (std::size_t k = 0; k < nz; k++) {
+  for (size_t j = 0; j < ny; j++) {
+    for (size_t k = 0; k < nz; k++) {
       assert(IsSolid(grid.cell_labels()(0, j, k)));
       assert(IsSolid(grid.cell_labels()(nx - 1, j, k)));
     }
   }
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t k = 0; k < nz; k++) {
       assert(IsSolid(grid.cell_labels()(i, 0, k)));
       assert(IsSolid(grid.cell_labels()(i, ny - 1, k)));
     }
   }
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny; j++) {
       assert(IsSolid(grid.cell_labels()(i, j, 0)));
       assert(IsSolid(grid.cell_labels()(i, j, nz - 1)));
     }
   }
 }
 
-void CheckEmptyParticleSplat(const StaggeredGrid& grid, std::size_t nx,
-                             std::size_t ny, std::size_t nz) {
+void CheckEmptyParticleSplat(const StaggeredGrid& grid, size_t nx,
+                             size_t ny, size_t nz) {
   // Check grid's arrays' sizes against size we used to initialize grid.
   assert(grid.u().nx() == nx + 1);
   assert(grid.u().ny() == ny);
@@ -94,17 +94,17 @@ void CheckEmptyParticleSplat(const StaggeredGrid& grid, std::size_t nx,
   CheckOuterCellsAreSolid(grid, nx, ny, nz);
 
   // All interior cell labels should be |EMPTY|.
-  for (std::size_t i = 1; i < nx - 1; i++) {
-    for (std::size_t j = 1; j < ny - 1; j++) {
-      for (std::size_t k = 1; k < nz - 1; k++) {
+  for (size_t i = 1; i < nx - 1; i++) {
+    for (size_t j = 1; j < ny - 1; j++) {
+      for (size_t k = 1; k < nz - 1; k++) {
         assert(IsEmpty(grid.cell_labels()(i, j, k)));
       }
     }
   }
 }
 
-void CheckOneParticleSplat(const StaggeredGrid& grid, std::size_t nx,
-                           std::size_t ny, std::size_t nz) {
+void CheckOneParticleSplat(const StaggeredGrid& grid, size_t nx,
+                           size_t ny, size_t nz) {
   // Particle is at (2.75, 3.25, 2.5).
   //
   // Our grid has lower corner (0, 0, 0) with grid cell width of 1.
@@ -135,9 +135,9 @@ void CheckOneParticleSplat(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(grid.u()(3, 3, 2), 10.0));
   //   . u(i + 1, j + 1, k + 1) = w0w1w2u = 0
   assert(FuzzyEquals(grid.u()(3, 3, 3), 0.0));
-  for (std::size_t i = 0; i < nx + 1; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx + 1; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.u()(i, j, k), 0.0));
         }
@@ -169,9 +169,9 @@ void CheckOneParticleSplat(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(grid.v()(3, 4, 2), 20.0));
   //   . v(i + 1, j + 1, k + 1) = w0w1w2v = 0
   assert(FuzzyEquals(grid.v()(3, 4, 3), 0.0));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny + 1; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny + 1; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 3 || j == 4) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.v()(i, j, k), 0.0));
         }
@@ -207,9 +207,9 @@ void CheckOneParticleSplat(const StaggeredGrid& grid, std::size_t nx,
   //   . w(i + 1, j + 1, k + 1) = w0w1w2w = 1/4*3/4*1/2 * 30.0 = 3/32*30.0
   //     But dividing by weights just yields 30.0
   assert(FuzzyEquals(grid.w()(3, 3, 3), 30.0));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz + 1; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz + 1; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.w()(i, j, k), 0.0));
         }
@@ -219,16 +219,16 @@ void CheckOneParticleSplat(const StaggeredGrid& grid, std::size_t nx,
 }
 
 void CheckOneParticlePostSplatMaterial(const StaggeredGrid& grid,
-                                       std::size_t nx, std::size_t ny,
-                                       std::size_t nz) {
+                                       size_t nx, size_t ny,
+                                       size_t nz) {
   CheckOuterCellsAreSolid(grid, nx, ny, nz);
 
   // All interior cell labels should be |EMPTY| except (2, 3, 2) that contains
   // the particle, which should be |FLUID|.
   assert(IsFluid(grid.cell_labels()(2, 3, 2)));
-  for (std::size_t i = 1; i < nx - 1; i++) {
-    for (std::size_t j = 1; j < ny - 1; j++) {
-      for (std::size_t k = 1; k < nz - 1; k++) {
+  for (size_t i = 1; i < nx - 1; i++) {
+    for (size_t j = 1; j < ny - 1; j++) {
+      for (size_t k = 1; k < nz - 1; k++) {
         if (!(i == 2 && j == 3 && k == 2)) {
           assert(IsEmpty(grid.cell_labels()(i, j, k)));
         }
@@ -237,8 +237,8 @@ void CheckOneParticlePostSplatMaterial(const StaggeredGrid& grid,
   }
 }
 
-void CheckTwoParticlesSplat(const StaggeredGrid& grid, std::size_t nx,
-                            std::size_t ny, std::size_t nz) {
+void CheckTwoParticlesSplat(const StaggeredGrid& grid, size_t nx,
+                            size_t ny, size_t nz) {
   // Particle 2 is at (3.125, 3.125, 2.5).
   //
   // Our grid has lower corner (0, 0, 0) with grid cell width of 1.
@@ -288,9 +288,9 @@ void CheckTwoParticlesSplat(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(grid.u()(2, 2, 3), 0.0));
   assert(FuzzyEquals(grid.u()(2, 3, 2), 10.0));
   assert(FuzzyEquals(grid.u()(2, 3, 3), 0.0));
-  for (std::size_t i = 0; i < nx + 1; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx + 1; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3)) &&
             !(i == 4 && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.u()(i, j, k), 0.0));
@@ -347,9 +347,9 @@ void CheckTwoParticlesSplat(const StaggeredGrid& grid, std::size_t nx,
   //   . v(i + 1, j + 1, k + 1) = v(3, 4, 3) = w0w1w2v = 0.0
   //     First particle also contributed 0.0
   assert(FuzzyEquals(grid.v()(3, 4, 3), 0.0));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny + 1; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny + 1; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 3 || j == 4) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.v()(i, j, k), 0.0));
         }
@@ -422,9 +422,9 @@ void CheckTwoParticlesSplat(const StaggeredGrid& grid, std::size_t nx,
   //     So w(3, 3, 3) = same as previous
   assert(FuzzyEquals(grid.w()(3, 3, 3),
                      23.24324324324324324324324324324324324324324324324));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz + 1; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz + 1; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.w()(i, j, k), 0.0));
         }
@@ -434,8 +434,8 @@ void CheckTwoParticlesSplat(const StaggeredGrid& grid, std::size_t nx,
 }
 
 void CheckTwoParticlePostSplatMaterial(const StaggeredGrid& grid,
-                                       std::size_t nx, std::size_t ny,
-                                       std::size_t nz) {
+                                       size_t nx, size_t ny,
+                                       size_t nz) {
   CheckOuterCellsAreSolid(grid, nx, ny, nz);
 
   // All interior cell labels should be |EMPTY| except (2, 3, 2) that contains
@@ -443,9 +443,9 @@ void CheckTwoParticlePostSplatMaterial(const StaggeredGrid& grid,
   // those cells should be |FLUID|.
   assert(IsFluid(grid.cell_labels()(2, 3, 2)));
   assert(IsFluid(grid.cell_labels()(3, 3, 2)));
-  for (std::size_t i = 1; i < nx - 1; i++) {
-    for (std::size_t j = 1; j < ny - 1; j++) {
-      for (std::size_t k = 1; k < nz - 1; k++) {
+  for (size_t i = 1; i < nx - 1; i++) {
+    for (size_t j = 1; j < ny - 1; j++) {
+      for (size_t k = 1; k < nz - 1; k++) {
         if (!((i == 2 || i == 3) && j == 3 && k == 2)) {
           assert(IsEmpty(grid.cell_labels()(i, j, k)));
         }
@@ -626,8 +626,8 @@ void CheckAdvection(const std::vector<Particle>& particles) {
 
 // Verify that having applied gravity subtracts dt times 9.80665 m/s^2 from all
 // vertical velocities while leaving all other values unchanged.
-void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
-                          std::size_t ny, std::size_t nz) {
+void CheckEffectOfGravity(const StaggeredGrid& grid, size_t nx,
+                          size_t ny, size_t nz) {
   // Horizontal velocities should all remain unchanged.
   assert(FuzzyEquals(grid.u()(3, 2, 2),
                      22.72727272727272727272727272727272727272727272727));
@@ -643,9 +643,9 @@ void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(grid.u()(2, 2, 3), 0.0));
   assert(FuzzyEquals(grid.u()(2, 3, 2), 10.0));
   assert(FuzzyEquals(grid.u()(2, 3, 3), 0.0));
-  for (std::size_t i = 0; i < nx + 1; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx + 1; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3)) &&
             !(i == 4 && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           assert(FuzzyEquals(grid.u()(i, j, k), 0.0));
@@ -667,9 +667,9 @@ void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(grid.v()(3, 4, 2),
                      14.44444444444444444444444444444444444444444444444));
   assert(FuzzyEquals(grid.v()(3, 4, 3), 0.0));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny + 1; j++) {
-      for (std::size_t k = 0; k < nz; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny + 1; j++) {
+      for (size_t k = 0; k < nz; k++) {
         if (!((i == 2 || i == 3) && (j == 3 || j == 4) && (k == 2 || k == 3))) {
           // Fixing the boundary velocities should reset these to zero.
           if (j <= 1 || j >= ny - 1) {
@@ -711,9 +711,9 @@ void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
   assert(FuzzyEquals(
       grid.w()(3, 3, 3),
       23.24324324324324324324324324324324324324324324324 - dt_times_g));
-  for (std::size_t i = 0; i < nx; i++) {
-    for (std::size_t j = 0; j < ny; j++) {
-      for (std::size_t k = 0; k < nz + 1; k++) {
+  for (size_t i = 0; i < nx; i++) {
+    for (size_t j = 0; j < ny; j++) {
+      for (size_t k = 0; k < nz + 1; k++) {
         if (!((i == 2 || i == 3) && (j == 2 || j == 3) && (k == 2 || k == 3))) {
           // Fixing the boundary velocities should reset these to zero.
           if (k <= 1 || k >= nz - 1) {
@@ -733,7 +733,7 @@ void CheckEffectOfGravity(const StaggeredGrid& grid, std::size_t nx,
 void TestGridSplatAdvectGravity(int argc, char** argv) {
   SimulationParameters params = ReadSimulationParameters(argc, argv);
 
-  std::size_t nx = 9, ny = 7, nz = 5;
+  size_t nx = 9, ny = 7, nz = 5;
   Eigen::Vector3d lower_corner(0.0, 0.0, 0.0);
   double dx = 1.0;
   StaggeredGrid grid(nx, ny, nz, lower_corner, dx);
@@ -807,19 +807,19 @@ void TestGridSplatAdvectGravity(int argc, char** argv) {
 // We skip all cells on the six faces of the grid's boundary since those are all
 // SOLID cells, so no divergence will be computed for them; the residual values
 // for those cells will automatically be set to zero.
-std::vector<Particle> MakeDivergenceFreeParticles(std::size_t nx,
-                                                  std::size_t ny,
-                                                  std::size_t nz, double dx) {
+std::vector<Particle> MakeDivergenceFreeParticles(size_t nx,
+                                                  size_t ny,
+                                                  size_t nz, double dx) {
   std::vector<Particle> particles;
 
   // Make particles at horizontal grid velocity points.
   double x = dx;
   double u = 0.0;
-  for (std::size_t i = 1; i <= nx - 1; i++, x += dx, u += 2.0) {
+  for (size_t i = 1; i <= nx - 1; i++, x += dx, u += 2.0) {
     double y = dx * 1.5;
-    for (std::size_t j = 1; j < ny - 1; j++, y += dx) {
+    for (size_t j = 1; j < ny - 1; j++, y += dx) {
       double z = dx * 1.5;
-      for (std::size_t k = 1; k < nz - 1; k++, z += dx) {
+      for (size_t k = 1; k < nz - 1; k++, z += dx) {
         particles.push_back(MakeParticle(x, y, z, u, 0.0, 0.0));
       }
     }
@@ -828,11 +828,11 @@ std::vector<Particle> MakeDivergenceFreeParticles(std::size_t nx,
   // Make particles at vertical grid velocity points.
   double y = dx;
   double v = 0.0;
-  for (std::size_t j = 1; j <= ny - 1; j++, y += dx, v += 3.0) {
+  for (size_t j = 1; j <= ny - 1; j++, y += dx, v += 3.0) {
     double x = dx * 1.5;
-    for (std::size_t i = 1; i < nx - 1; i++, x += dx) {
+    for (size_t i = 1; i < nx - 1; i++, x += dx) {
       double z = dx * 1.5;
-      for (std::size_t k = 1; k < nz - 1; k++, z += dx) {
+      for (size_t k = 1; k < nz - 1; k++, z += dx) {
         particles.push_back(MakeParticle(x, y, z, 0.0, v, 0.0));
       }
     }
@@ -841,11 +841,11 @@ std::vector<Particle> MakeDivergenceFreeParticles(std::size_t nx,
   // Make particles at depth grid velocity points.
   double z = dx;
   double w = 0.0;
-  for (std::size_t k = 1; k <= nz - 1; k++, z += dx, w -= 5.0) {
+  for (size_t k = 1; k <= nz - 1; k++, z += dx, w -= 5.0) {
     double x = dx * 1.5;
-    for (std::size_t i = 1; i < nx - 1; i++, x += dx) {
+    for (size_t i = 1; i < nx - 1; i++, x += dx) {
       double y = dx * 1.5;
-      for (std::size_t j = 1; j < ny - 1; j++, y += dx) {
+      for (size_t j = 1; j < ny - 1; j++, y += dx) {
         particles.push_back(MakeParticle(x, y, z, 0.0, 0.0, w));
       }
     }
@@ -857,7 +857,7 @@ std::vector<Particle> MakeDivergenceFreeParticles(std::size_t nx,
 void TestPressureProjection(int argc, char** argv) {
   SimulationParameters params = ReadSimulationParameters(argc, argv);
 
-  std::size_t nx = 9, ny = 7, nz = 5;
+  size_t nx = 9, ny = 7, nz = 5;
   Eigen::Vector3d lower_corner(0.0, 0.0, 0.0);
   double dx = 1.0;
   StaggeredGrid grid(nx, ny, nz, lower_corner, dx);
@@ -885,7 +885,7 @@ void TestPressureProjection(int argc, char** argv) {
 std::vector<Particle> GridToParticle(int argc, char** argv, double flip_ratio) {
   SimulationParameters params = ReadSimulationParameters(argc, argv);
 
-  std::size_t nx = 9, ny = 7, nz = 5;
+  size_t nx = 9, ny = 7, nz = 5;
   Eigen::Vector3d lower_corner(0.0, 0.0, 0.0);
   double dx = 1.0;
   StaggeredGrid grid(nx, ny, nz, lower_corner, dx);

@@ -23,7 +23,7 @@ class StaggeredGrid {
   // - |nx| x |ny| x |nz + 1| array of depth fluid velocities
   // - |lc| is the lower corner (min x, y, z) position of the grid
   // - |dx| is the grid cell width (side length)
-  StaggeredGrid(std::size_t nx, std::size_t ny, std::size_t nz,
+  StaggeredGrid(size_t nx, size_t ny, size_t nz,
                 const Eigen::Vector3d& lc, double dx);
 
   // Deallocates the data this grid stores.
@@ -118,16 +118,16 @@ class StaggeredGrid {
       const Eigen::Vector3d& pos) const;
 
   // Number of rows of data this array stores (x or i direction)
-  const std::size_t nx_;
+  const size_t nx_;
 
   // Number of columns of data this array stores (y or j direction)
-  const std::size_t ny_;
+  const size_t ny_;
 
   // Depth of data this array stores (z or k direction)
-  const std::size_t nz_;
+  const size_t nz_;
 
   // Size of a single stack of this array's data, for convenience
-  const std::size_t ny_nz_;
+  const size_t ny_nz_;
 
   // Lower corner position (min x, y, z) of the grid
   const Eigen::Vector3d lc_;

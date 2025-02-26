@@ -20,7 +20,7 @@ class PressureSolver {
   // pressure values of a StaggeredGrid's cells, and d is the "vector" of
   // scaled, flipped velocity divergence values for each cell. All arrays are
   // the same size as the StaggeredGrid that owns |this|: |nx| x |ny| x |nz|.
-  PressureSolver(std::size_t nx, std::size_t ny, std::size_t nz);
+  PressureSolver(size_t nx, size_t ny, size_t nz);
 
   // Deallocates the data this grid stores.
   ~PressureSolver();
@@ -40,13 +40,13 @@ class PressureSolver {
   PressureSolver& operator=(const PressureSolver& other);
 
   // Number of rows of data this array stores (x or i direction)
-  const std::size_t nx_;
+  const size_t nx_;
 
   // Number of columns of data this array stores (y or j direction)
-  const std::size_t ny_;
+  const size_t ny_;
 
   // Depth of data this array stores (z or k direction)
-  const std::size_t nz_;
+  const size_t nz_;
 
   // Residual values for pressure projection
   Array3D<double> r_;
